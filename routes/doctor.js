@@ -3,46 +3,44 @@ import db from '../db/db';
 import Doctor from '../models/Doctor';
 const router = express.Router({});
 //前台接口
-router.get('/web/api/addDoc',(req,res)=>{
-    const doctor = new Doctor({
-        // 医生姓名
-        dName: '刘德华',
-        //医生职称
-        docTitle:'主任医师',
-        // 医生编号
-        dID:100004,
-        //性别
-        dGender:'男',
-        //身份证
-        dIDCard:'440903200006111718',
-        //出生日期
-        dBirthday:new Date(2000,5,15),
-        //所属科室
-        dDepartment:'大学城针灸',
-        //所属科室编号
-        dPmtid:'0004',
-        //电话
-        dTel:'13046277412',
-        //排班情况
-        dScheduling:[
-            {date:new Date(2022,2,10).getTime(),isVisit:true,am1:6,am2:9,pm1:3,pm2:30},
-            {date:new Date(2022,2,11).getTime(),isVisit:true,am1:4,am2:9,pm1:35,pm2:30},
-            {date:new Date(2022,2,12).getTime(),isVisit:true,am1:4,am2:9,pm1:5,pm2:30},
-            {date:new Date(2022,2,14).getTime(),isVisit:false,am1:4,am2:2,pm1:35,pm2:3},
-            {date:new Date(2022,2,15).getTime(),isVisit:true,am1:4,am2:9,pm1:35,pm2:30},
-            {date:new Date(2022,2,16).getTime(),isVisit:false,am1:4,am2:9,pm1:35,pm2:30},
-        ]
-    });
-    doctor.save((err,result)=>{
-        if (err) {
-            return next(Error(err))
-        }
-        res.send({
-            success_code: 200,
+router.post('/web/api/addDoc',(req,res,next)=>{
+    if (req.session.userID) {
+        const doctor = new Doctor({
+            // 医生姓名
+            dName: req.body.dName,
+            //医生职称
+            docTitle:req.body.docTitle,
+            // 医生编号
+            dID:req.body.dID,
+            //性别
+            dGender:req.body.dGender,
+            //所属科室
+            dDepartment:req.body.dDepartment,
+            //所属科室编号
+            dPmtid:req.body.dPmtid,
+            //电话
+            dTel:req.body.tel,
+            //简介
+            dIntroduction:req.body.introduction,
+            //排班情况
+            dScheduling:[]
+        });
+        doctor.save((err,result)=>{
+            if (err) {
+                return next(Error(err))
+            }
+            res.send({
+                status: 200,
                 data: result,
                 message: '添加医师成功'
+            })
         })
-    })
+    }else{
+        res.json({
+            status:401,
+            message:'你还没登录'
+        })
+    }
 })
 router.get('/web/api/getDocByDay',(req,res)=>{
     let s_id = req.query.s_id;
@@ -72,7 +70,7 @@ router.get('/web/api/getDocByDay',(req,res)=>{
             }
     })
 })
-router.get('/web/api/getDocById',(req,res)=>{
+router.get('/web/api/getDocById',(req,res,next)=>{
     let dID = req.query.dID;
     Doctor.find({dID},(err,result)=>{
         if (err) return next(Error(err));
@@ -106,14 +104,54 @@ router.post('/web/api/scheduling',(req,res,next)=>{
 
 //后台管理接口
 router.get('/web/api/getDoctors',(req,res)=>{
-    Doctor.find({},(err,result)=>{
-        if (err) return next(Error(err));
-        if (result) {
-            res.json({
-                status:200,
-                doc:result
-            })
-        }
-    })
+    if (req.session.userID) {
+        Doctor.find({},(err,result)=>{
+            if (err) return next(Error(err));
+            if (result) {
+                res.json({
+                    status:200,
+                    doc:result
+                })
+            }
+        })
+    }else{
+        res.json({
+            status:401,
+            message:'你还没登录'
+        })
+    }
+    
+})
+router.post('/web/api/changeDoctor',(req,res,next)=>{
+    if (req.session.userID) {
+        let dID = req.body.dID;
+        let name = req.body.dName;
+        let gender = req.body.dGender;
+        let s_id = req.body.s_id;
+        let s_name = req.body.s_name;
+        let introduction = req.body.introduction;
+        let docTitle = req.body.docTitle;
+        db.collection('doctors').updateOne({dID:dID},{$set:{
+            dName:name,
+            dGender:gender,
+            docTitle:docTitle,
+            dPmtid:s_id,
+            dDepartment:s_name,
+            dIntroduction:introduction
+        }},(err)=>{
+            if (err) throw err;
+        });
+        res.send({
+            status:200,
+            message:'修改成功'
+        })
+    }else{
+        res.send({
+            status:401,
+            message:'登录已经过期!'
+        })
+    }
+
+
 })
 export default router;

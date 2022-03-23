@@ -12,11 +12,11 @@
   "license": "ISC",
   "dependencies": {
     "babel-register": "^6.26.0",
-    "express": "^4.17.3",
     "blueimp-md5": "^2.10.0",
     "connect-mongo": "^3.0.0",
     "cors": "^2.8.5",
-    "express-session": "^1.16.2",
+    "express": "^4.17.3",
+    "express-session": "^1.17.2",
     "formidable": "^1.2.1",
     "mongoose": "^5.6.3",
     "nunjucks": "^3.2.0",

@@ -10,10 +10,6 @@ const DoctorSchema = mongoose.Schema({
     dID:{type:Number},
     //性别
     dGender:{type:String},
-    //身份证
-    dIDCard:{type:String},
-    //出生日期
-    dBirthday:{type:Date},
     //所属科室
     dDepartment:{type:String},
     //所属科室编号
@@ -21,8 +17,10 @@ const DoctorSchema = mongoose.Schema({
     //电话
     dTel:{type:String},
     //排班情况
-    dScheduling:{type:Array}
+    dScheduling:{type:Array},
     // [{date:"3/8",isvisit:true,am:3,pm:9}]
+    //简介
+    dIntroduction:{type:String}
 
 });
 

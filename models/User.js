@@ -7,7 +7,7 @@ const UserSchema = mongoose.Schema({
     // 密码
     password:{type:String},
     // tel
-    tel:{type:Number}
+    tel:{type:String}
 });
 
 const User = mongoose.model('user', UserSchema);
