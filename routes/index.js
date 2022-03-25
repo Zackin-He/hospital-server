@@ -2,6 +2,9 @@ import express from 'express'
 import Departments from '../models/Departments';
 import User from '../models/User';
 import db from '../db/db';
+import {
+    route
+} from 'express/lib/application';
 const router = express.Router({});
 
 router.get('/web/api/departmentList', (req, res) => {
@@ -90,21 +93,51 @@ router.post('/web/api/changeSpecailty', (req, res, next) => {
         let newDepartment = req.body.newDepartment;
         let s_name = req.body.s_name;
         let s_introduction = req.body.introduction;
-        if (oldDepartment==newDepartment) {
+        if (oldDepartment == newDepartment) {
             console.log(2);
-            db.collection('departments').updateOne({department:newDepartment,"specialty.specialty_id":s_id},{
-                $set: {"specialty.$.specialty_name":s_name,"specialty.$.introduction":s_introduction}
+            db.collection('departments').updateOne({
+                department: newDepartment,
+                "specialty.specialty_id": s_id
+            }, {
+                $set: {
+                    "specialty.$.specialty_name": s_name,
+                    "specialty.$.introduction": s_introduction
+                }
             })
-        }else{
-            let new_s = {specialty_id:s_id,specialty_name:s_name,introduction:s_introduction};
-            db.collection('departments').updateOne({department:newDepartment},{$addToSet:{specialty:new_s}});
-            db.collection('departments').updateOne({department:oldDepartment},{$pull:{specialty:{specialty_id:s_id}}});
+        } else {
+            let new_s = {
+                specialty_id: s_id,
+                specialty_name: s_name,
+                introduction: s_introduction
+            };
+            db.collection('departments').updateOne({
+                department: newDepartment
+            }, {
+                $addToSet: {
+                    specialty: new_s
+                }
+            });
+            db.collection('departments').updateOne({
+                department: oldDepartment
+            }, {
+                $pull: {
+                    specialty: {
+                        specialty_id: s_id
+                    }
+                }
+            });
             console.log(3);
         }
-        db.collection('doctors').updateMany({dPmtid:s_id},{$set:{dDepartment:s_name}});
+        db.collection('doctors').updateMany({
+            dPmtid: s_id
+        }, {
+            $set: {
+                dDepartment: s_name
+            }
+        });
         res.send({
-            status:200,
-            message:'修改成功'
+            status: 200,
+            message: '修改成功'
         })
     } else {
         res.send({
@@ -115,4 +148,79 @@ router.post('/web/api/changeSpecailty', (req, res, next) => {
 
 })
 
+//门诊添加
+router.post('/web/api/addDepartment', (req, res, next) => {
+    if (req.session.userID) {
+        let departmentName = req.body.departmentName;
+        Departments.find({
+            department: departmentName
+        }, (err, result) => {
+            if (err) return next(Error(err));
+            if (result.length > 0) {
+                res.send({
+                    status: 400,
+                    message: '添加失败，该科室已存在！'
+                })
+            } else {
+                db.collection('departments').insert({
+                    department: departmentName,
+                    specialty: []
+                });
+                res.send({
+                    status: 200,
+                    message: '添加门诊成功'
+                })
+            }
+        })
+    } else {
+        res.send({
+            status: 401,
+            message: '登录已经过期，请重新登录'
+        })
+    }
+})
+//门诊添加
+router.post('/web/api/addSpecialty', (req, res, next) => {
+    if (req.session.userID) {
+        let departmentName = req.body.departmentName;
+        let specialtyName = req.body.specialtyName;
+        let specialtyID = req.body.specialtyID;
+        let introduction = req.body.introduction;
+        let flag = true;
+        Departments.find({
+            "specialty.specialty_id": specialtyID
+        }, (err, result) => {
+            if (result.length > 0) {
+                res.send({
+                    status: 400,
+                    message: '该科室id已经存在！'
+                })
+            } else {
+                let new_s = {
+                    specialty_id: specialtyID,
+                    specialty_name: specialtyName,
+                    introduction: introduction
+                };
+                db.collection('departments').updateOne({
+                    department: departmentName
+                }, {
+                    $addToSet: {
+                        specialty: new_s
+                    }
+                });
+                res.send({
+                    status: 200,
+                    message: "添加科室成功!"
+                })
+            }
+        })
+        
+
+    } else {
+        res.send({
+            status: 401,
+            message: '登录已经过期，请重新登录'
+        })
+    }
+})
 export default router;
