@@ -20,7 +20,9 @@ const DoctorSchema = mongoose.Schema({
     dScheduling:{type:Array},
     // [{date:"3/8",isvisit:true,am:3,pm:9}]
     //简介
-    dIntroduction:{type:String}
+    dIntroduction:{type:String},
+    //密码
+    dPassword:{type:String}
 
 });
 

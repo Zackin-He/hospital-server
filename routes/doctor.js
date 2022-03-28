@@ -23,7 +23,9 @@ router.post('/web/api/addDoc', (req, res, next) => {
             //简介
             dIntroduction: req.body.introduction,
             //排班情况
-            dScheduling: []
+            dScheduling: [],
+            //密码
+            dPassword:'123456'
         });
         doctor.save((err, result) => {
             if (err) {

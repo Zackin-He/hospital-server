@@ -5,6 +5,7 @@ import db from '../db/db';
 import {
     route
 } from 'express/lib/application';
+import Doctor from '../models/Doctor';
 const router = express.Router({});
 
 router.get('/web/api/departmentList', (req, res) => {
@@ -20,62 +21,125 @@ router.get('/web/api/departmentList', (req, res) => {
 router.post('/web/api/test', (req, res, next) => {
     let username = req.body.username;
     let password = req.body.password;
-    User.findOne({
-        name: username
-    }, (err, user) => {
-        console.log(user);
-        if (user) { //已经注册
-            if (user.password !== password) { //密码错误
+    let user_type = req.body.user_type;
+    if (user_type === 'admin') {
+        User.findOne({
+            name: username
+        }, (err, user) => {
+            console.log(user);
+            if (user) { //已经注册
+                if (user.password !== password) { //密码错误
+                    res.send({
+                        err_code: 0,
+                        message: '用户名或密码不正确!'
+                    });
+                } else { //登录成功
+                    req.session.userID = user._id;
+                    req.session.user_type = user_type;
+                    res.send({
+                        status: 200,
+                        data: {
+                            token: user._id,
+                            username: user.name,
+                            tel: user.dTel,
+                            type: user_type
+                        }
+                    });
+                }
+            } else {
                 res.send({
-                    err_code: 0,
-                    message: '用户名或密码不正确!'
-                });
-            } else { //登录成功
-                req.session.userID = user._id;
-                res.send({
-                    status: 200,
-                    data: {
-                        token: user._id,
-                        username: user.name,
-                        tel: user.tel,
-                    }
+                    status: 0,
+                    message: '没有该用户'
                 });
             }
-        } else {
-            res.send({
-                status: 0,
-                message: '没有该用户'
-            });
-        }
-    })
+        })
+    }else if (user_type === 'doctor') {
+        Doctor.findOne({
+            dID: username
+        }, (err, user) => {
+            console.log(user);
+            if (user) { //已经注册
+                if (user.dPassword !== password) { //密码错误
+                    res.send({
+                        err_code: 0,
+                        message: '用户名或密码不正确!'
+                    });
+                } else { //登录成功
+                    req.session.userID = user._id;
+                    req.session.user_type = user_type
+                    res.send({
+                        status: 200,
+                        data: {
+                            token: user._id,
+                            username: user.dID,
+                            tel: user.tel,
+                            type: user_type
+                        }
+                    });
+                }
+            } else {
+                res.send({
+                    status: 0,
+                    message: '没有该用户'
+                });
+            }
+        })
+    }
 })
 //自动登录
 router.get('/web/api/userInfo', (req, res) => {
     console.log(req.session.userID);
     // 1. 取出userId
     const userId = req.session.userID;
+    const user_type = req.session.user_type
     // 2. 查询
-    User.findOne({
-        _id: userId
-    }, (err, user) => {
-        if (!user) {
-            // 清除上一次的userId
-            delete req.session.userid;
-            res.send({
-                status: 401,
-                message: '请先登录啊'
-            });
-        } else {
-            res.send({
-                status: 200,
-                data: {
-                    token: user._id,
-                    username: user.name,
-                    tel: user.tel,
-                }
-            });
-        }
-    })
+    if (user_type==='admin') {
+        User.findOne({
+            _id: userId
+        }, (err, user) => {
+            if (!user) {
+                // 清除上一次的userId
+                delete req.session.userid;
+                res.send({
+                    status: 401,
+                    message: '请先登录啊'
+                });
+            } else {
+                res.send({
+                    status: 200,
+                    data: {
+                        token: user._id,
+                        username: user.name,
+                        tel: user.tel,
+                        type:'admin'
+                    }
+                });
+            }
+        })
+    }else if (user_type==='doctor') {
+        Doctor.findOne({
+            _id: userId
+        }, (err, user) => {
+            if (!user) {
+                // 清除上一次的userId
+                delete req.session.userid;
+                res.send({
+                    status: 401,
+                    message: '请先登录啊'
+                });
+            } else {
+                res.send({
+                    status: 200,
+                    data: {
+                        token: user._id,
+                        username: user.dID,
+                        tel: user.dTel,
+                        type:'doctor'
+                    }
+                });
+            }
+        })
+    }
 });
 //退出登录
 router.get('/web/api/logout', (req, res, next) => {
