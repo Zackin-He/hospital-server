@@ -8,7 +8,8 @@ import {
 import Doctor from '../models/Doctor';
 const router = express.Router({});
 
-router.get('/web/api/departmentList', (req, res) => {
+//用户获取科室列表
+router.get('/web/api/getDepartments', (req, res) => {
     Departments.find({}, (err, list) => {
         console.log(list[0]);
         res.send({
@@ -16,7 +17,26 @@ router.get('/web/api/departmentList', (req, res) => {
             data: list
         })
     })
-})
+});
+
+//管理员获取科室列表
+router.get('/web/api/departmentList', (req, res) => {
+    if (req.session.userID) {
+        Departments.find({}, (err, list) => {
+            console.log(list[0]);
+            res.send({
+                success_code: 200,
+                data: list
+            })
+        })
+    }else{
+        res.send({
+            status:401,
+            message:'请重新登录'
+        })
+    }
+});
+
 //后台管理
 router.post('/web/api/test', (req, res, next) => {
     let username = req.body.username;
@@ -71,9 +91,11 @@ router.post('/web/api/test', (req, res, next) => {
                         status: 200,
                         data: {
                             token: user._id,
-                            username: user.dID,
+                            username: user.dName,
+                            dID:user.dID,
                             tel: user.tel,
-                            type: user_type
+                            type: user_type,
+                            doc:user
                         }
                     });
                 }
@@ -132,9 +154,11 @@ router.get('/web/api/userInfo', (req, res) => {
                     status: 200,
                     data: {
                         token: user._id,
-                        username: user.dID,
+                        username: user.dName,
+                        dID:user.dID,
                         tel: user.dTel,
-                        type:'doctor'
+                        type:'doctor',
+                        doc:user
                     }
                 });
             }
@@ -223,7 +247,7 @@ router.post('/web/api/addDepartment', (req, res, next) => {
             if (result.length > 0) {
                 res.send({
                     status: 400,
-                    message: '添加失败，该科室已存在！'
+                    message: '添加失败，该门诊已存在！'
                 })
             } else {
                 db.collection('departments').insert({
@@ -286,5 +310,39 @@ router.post('/web/api/addSpecialty', (req, res, next) => {
             message: '登录已经过期，请重新登录'
         })
     }
+})
+//删除科室
+router.post('/web/api/deleteSpecialty',(req,res,next)=>{
+    if (req.session.userID&&req.session.user_type==='admin') {
+        let departmentName = req.body.departmentName;
+        let specialtyID = req.body.specialtyID;
+        db.collection('departments').updateOne({
+            department: departmentName
+        }, {
+            $pull: {
+                specialty: {
+                    specialty_id: specialtyID
+                }
+            }
+        });
+        db.collection('doctors').updateMany({
+            dPmtid: specialtyID
+        }, {
+            $set: {
+                dPmtid:'0000',
+                dDepartment: '大学城综合科室'
+            }
+        });
+        res.send({
+            status:200,
+            message:'删除科室成功'
+        })
+    }else{
+        res.send({
+            status:401,
+            message:'请重新登录!'
+        })
+    }
+    
 })
 export default router;

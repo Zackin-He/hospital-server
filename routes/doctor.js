@@ -25,7 +25,7 @@ router.post('/web/api/addDoc', (req, res, next) => {
             //排班情况
             dScheduling: [],
             //密码
-            dPassword:'123456'
+            dPassword: '123456'
         });
         doctor.save((err, result) => {
             if (err) {
@@ -94,25 +94,32 @@ router.get('/web/api/getDocById', (req, res, next) => {
     })
 })
 router.post('/web/api/scheduling', (req, res, next) => {
-    let dID = req.body.dID; //医生id
-    let schedule = req.body.schedule; //排班数据
-    db.collection('doctors').updateOne({
-        dID: dID
-    }, {
-        $set: {
-            dScheduling: schedule
-        }
-    }, {
-        safe: true
-    }, (err, result) => {
-        if (err) {
-            return next(err);
-        }
-        res.json({
-            status: 200,
-            message: '排班成功'
+    if (req.session.userID) {
+        let dID = req.body.dID; //医生id
+        let schedule = req.body.schedule; //排班数据
+        db.collection('doctors').updateOne({
+            dID: dID
+        }, {
+            $set: {
+                dScheduling: schedule
+            }
+        }, {
+            safe: true
+        }, (err, result) => {
+            if (err) {
+                return next(err);
+            }
+            res.json({
+                status: 200,
+                message: '排班成功'
+            })
         })
-    })
+    } else {
+        res.send({
+            status: 401,
+            message: '请重新登录!'
+        })
+    }
 })
 
 
@@ -138,13 +145,23 @@ router.get('/web/api/getDoctors', (req, res) => {
 })
 //根据条件获取医生
 router.post('/web/api/getDoctorsByCondition', (req, res, next) => {
-        
+
     if (req.session.userID) {
         let dName = req.body.dName;
         let dSpecialty = req.body.dSpecialty;
         let dTitle = req.body.dTitle;
-        console.log(dName,dSpecialty,dTitle);
-        Doctor.find({'dName':{$regex:dName},'dPmtid':{$regex:dSpecialty},'docTitle':{$regex:dTitle}}, (err, result) => {
+        console.log(dName, dSpecialty, dTitle);
+        Doctor.find({
+            'dName': {
+                $regex: dName
+            },
+            'dPmtid': {
+                $regex: dSpecialty
+            },
+            'docTitle': {
+                $regex: dTitle
+            }
+        }, (err, result) => {
             if (err) return next(Error(err));
             res.send({
                 status: 200,
@@ -162,7 +179,8 @@ router.post('/web/api/getDoctorsByCondition', (req, res, next) => {
 })
 router.post('/web/api/changeDoctor', (req, res, next) => {
     if (req.session.userID) {
-        let dID = req.body.dID;
+        if (req.session.user_type==='admin') {
+            let dID = req.body.dID;
         let name = req.body.dName;
         let gender = req.body.dGender;
         let s_id = req.body.s_id;
@@ -187,6 +205,12 @@ router.post('/web/api/changeDoctor', (req, res, next) => {
             status: 200,
             message: '修改成功'
         })
+        }else{
+            res.send({
+                status:402,
+                message:'你无权限进行此操作！'
+            })
+        }
     } else {
         res.send({
             status: 401,
@@ -194,6 +218,32 @@ router.post('/web/api/changeDoctor', (req, res, next) => {
         })
     }
 
+
+})
+router.post('/web/api/deleteDoctor', (req, res, next) => {
+    if (req.session.userID) {
+        if (req.session.user_type === 'admin') {
+            let dID = req.body.dID;
+        db.collection('doctors').deleteOne({
+            'dID': dID
+        });
+        res.send({
+            status: 200,
+            message: '删除医生成功'
+        })
+        }else{
+            res.send({
+                status:402,
+                message:'你无权限进行此操作！'
+            })
+        }
+        
+    } else {
+        res.send({
+            status: 401,
+            message: '请重新登录!'
+        })
+    }
 
 })
 export default router;

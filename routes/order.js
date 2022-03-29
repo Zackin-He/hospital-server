@@ -50,7 +50,7 @@ router.post('/web/api/addOrder',(req,res,next)=>{
                         //主治医生id
                         pDocID:doc.dID,
                         //科室id
-                        dID:doc.dPmtit,
+                        dID:doc.dPmtid,
                         //科室
                         dpmt:doc.dDepartment,
                         //单号
@@ -63,6 +63,7 @@ router.post('/web/api/addOrder',(req,res,next)=>{
                         treatTime:treatTime,
                         //患者手机号
                         pTel:pTel
+                        
                     })
                     order.save((err,result)=>{
                         if (err) {
@@ -90,7 +91,7 @@ router.post('/web/api/addOrder',(req,res,next)=>{
         }
     })
 })
-router.post('/web/api/findOrder',(req,res)=>{
+router.post('/web/api/findOrder',(req,res,next)=>{
     let pName = req.body.pName;//患者姓名
     let pID = req.body.pID;//患者身份证号
     RegForm.find({pName:pName,pID:pID},(err,result)=>{
@@ -100,5 +101,103 @@ router.post('/web/api/findOrder',(req,res)=>{
                 data: result
             })
     })
+})
+router.get('/web/api/getOrders',(req,res,next)=>{
+    if (req.session.userID) {
+        RegForm.find({},(err,result)=>{
+            if (err) return next(Error(err));
+            res.json({
+                status: 200,
+                data: result
+            })
+        })
+    }else{
+        res.send({
+            status:401,
+            message:'请重新登录!'
+        })
+    }
+})
+router.post('/web/api/getOrdersByCondition', (req, res, next) => {
+    if (req.session.userID) {
+        let regNumber = req.body.regNumber;
+        let pName = req.body.pName;
+        let pDocName = req.body.pDocName;
+        let dID = req.body.dpmt;
+        console.log(regNumber,pName,pDocName,dID);
+        RegForm.find({
+            'regNumber': {
+                $regex: regNumber
+            },
+            'pName': {
+                $regex: pName
+            },
+            'pDocName': {
+                $regex: pDocName
+            },
+            'dID': {
+                $regex: dID
+            }
+        }, (err, result) => {
+            if (err) return next(Error(err));
+            res.send({
+                status: 200,
+                data: result
+            })
+        });
+
+    } else {
+        res.send({
+            status: 401,
+            message: '请重新登录!'
+        })
+    }
+
+})
+router.post('/web/api/getOrdersByConditionAndID', (req, res, next) => {
+    if (req.session.userID) {
+        let regNumber = req.body.regNumber;
+        let pName = req.body.pName;
+        let docID = req.body.docID;
+        RegForm.find({
+            'regNumber': {
+                $regex: regNumber
+            },
+            'pName': {
+                $regex: pName
+            },
+            'pDocID': docID
+        }, (err, result) => {
+            if (err) return next(Error(err));
+            res.send({
+                status: 200,
+                data: result
+            })
+        });
+
+    } else {
+        res.send({
+            status: 401,
+            message: '请重新登录!'
+        })
+    }
+
+})
+router.post('/web/api/getOrdersByDocID',(req,res,next)=>{
+    let dID = req.body.dID
+    if (req.session.userID) {
+        RegForm.find({pDocID:dID},(err,result)=>{
+            if (err) return next(Error(err));
+            res.json({
+                status: 200,
+                data: result
+            })
+        })
+    }else{
+        res.send({
+            status:401,
+            message:'请重新登录!'
+        })
+    }
 })
 export default router;
