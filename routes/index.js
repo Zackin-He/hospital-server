@@ -413,7 +413,7 @@ router.post('/web/api/getCode',(req,res,next)=>{
 router.post('/web/api/loginByEmail',(req,res,next)=>{
     let email = req.body.email;
     let code = req.body.code;
-    console.log(req.session.email,req.session.code);
+    // console.log(req.session.email,req.session.code);
     if (email!==req.session.email||code!==req.session.code) {
         res.send({
             status:400,
