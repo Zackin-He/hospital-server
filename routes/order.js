@@ -10,6 +10,7 @@ router.post('/web/api/addOrder',(req,res,next)=>{
     let pDocID = req.body.pDocID;//医生id
     let treatDate = req.body.treatDate;//就诊日期
     let treatTime = req.body.treatTime;//就诊时间
+    let email = req.body.email
     let orderNum = '';
     for (let i = 0; i < 8; i++) {
         orderNum+=Math.floor(Math.random()*9+1);
@@ -45,6 +46,8 @@ router.post('/web/api/addOrder',(req,res,next)=>{
                         pName: pName,
                         // 患者身份证
                         pID:pID,
+                        //患者邮箱
+                        pEmail:email,
                         //主治医生姓名
                         pDocName:doc.dName,
                         //主治医生id
@@ -92,9 +95,8 @@ router.post('/web/api/addOrder',(req,res,next)=>{
     })
 })
 router.post('/web/api/findOrder',(req,res,next)=>{
-    let pName = req.body.pName;//患者姓名
-    let pID = req.body.pID;//患者身份证号
-    RegForm.find({pName:pName,pID:pID},(err,result)=>{
+    let email = req.body.email;//患者账号
+    RegForm.find({pEmail:email},(err,result)=>{
         if (err) return next(Error(err));
             res.json({
                 status: 200,
@@ -199,5 +201,46 @@ router.post('/web/api/getOrdersByDocID',(req,res,next)=>{
             message:'请重新登录!'
         })
     }
+})
+router.post('/web/api/cancelOrder',(req,res,next)=>{
+    let regNumber = req.body.regNumber;//预约单号
+    let pDocID = req.body.pDocID;//医生id
+    let treatDate = req.body.treatDate;//就诊日期
+    let treatTime = req.body.treatTime;//就诊时间
+    db.collection('regforms').deleteOne({regNumber:regNumber});
+    Doctor.findOne({dID:pDocID},(err,doc)=>{
+        if (err) return next(Error(err));
+        if (doc) {
+            for (let i = 0; i < doc.dScheduling.length; i++) {
+                if(doc.dScheduling[i].date===treatDate){
+                    //相应的剩余号数+1
+                    if (treatTime=='am1') {
+                        db.collection('doctors').updateOne({dID:pDocID,"dScheduling.date":treatDate},{
+                            $inc: {"dScheduling.$.am1":1}
+                        })
+                    }else if (treatTime=='am2') {
+                        db.collection('doctors').updateOne({dID:pDocID,"dScheduling.date":treatDate},{
+                            $inc: {"dScheduling.$.am2":1}
+                        })
+                    }
+                    else if (treatTime=='pm1') {
+                        db.collection('doctors').updateOne({dID:pDocID,"dScheduling.date":treatDate},{
+                            $inc: {"dScheduling.$.pm1":1}
+                        })
+                    }
+                    else if (treatTime=='pm2') {
+                        db.collection('doctors').updateOne({dID:pDocID,"dScheduling.date":treatDate},{
+                            $inc: {"dScheduling.$.pm2":1}
+                        })
+                    }
+                    break;
+                }
+            }
+        }
+    })
+    res.send({
+        status:200,
+        message:'取消预约成功'
+    })
 })
 export default router;

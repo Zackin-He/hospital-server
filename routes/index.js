@@ -7,6 +7,26 @@ import {
 } from 'express/lib/application';
 import Doctor from '../models/Doctor';
 const router = express.Router({});
+let nodemailer = require('nodemailer'),
+  smtpTransport = require('nodemailer-smtp-transport'),
+  cronJob = require('cron').CronJob;
+
+// SMTP 连接
+let transport = nodemailer.createTransport(smtpTransport({
+  // 主机
+  host: 'smtp.sina.com',
+  // 是否使用 SSL
+  secure: false,
+  secureConnection: false,
+  // 网易的SMTP端口
+  port: 25,
+  auth: {
+    // 账号
+    user: 'hezeting520@sina.com',
+    // 授权码(自行百度邮箱SMTP的授权码设置)，此处非密码
+    pass: '3d1da5125a43f116'
+  }
+}));
 
 //用户获取科室列表
 router.get('/web/api/getDepartments', (req, res) => {
@@ -344,5 +364,66 @@ router.post('/web/api/deleteSpecialty',(req,res,next)=>{
         })
     }
     
+})
+/*生成指定长度的随机数*/
+function randomCode(length) {
+    let chars = ['0','1','2','3','4','5','6','7','8','9'];
+    let result = "";
+    for(let i = 0; i < length ; i ++) {
+        let index = Math.ceil(Math.random()*9);
+        result += chars[index];
+    }
+    return result;
+}
+let user = {}
+//获取验证码
+router.post('/web/api/getCode',(req,res,next)=>{
+    let email = req.body.email;
+    let code = randomCode(6);
+    req.session.code = code;
+    req.session.email = email;
+    // 设置邮件内容
+    let mailOptions = {
+        // 发件人地址，例如 1234<1234@163.com>
+        from: 'hezeting520@sina.com',
+        // 收件人地址，可以使用逗号隔开添加多个
+        // '***@qq.com, ***@163.com'
+        to: email,
+        // 标题
+        subject: '验证码',
+        // 邮件内容可以自定义样式
+        html: '<p>您的验证码是'+code+'</p>'
+      }
+      transport.sendMail(mailOptions, (error, response) => {
+        if (error) {
+          console.error(error)
+        } else {
+          console.log('Message Send Ok ');
+        }
+        // 记得关闭连接
+        transport.close();
+      });
+      res.send({
+          status:200,
+          message:'验证码获取成功',
+          code:code
+      })
+})
+//根据验证码登录
+router.post('/web/api/loginByEmail',(req,res,next)=>{
+    let email = req.body.email;
+    let code = req.body.code;
+    console.log(req.session.email,req.session.code);
+    if (email!==req.session.email||code!==req.session.code) {
+        res.send({
+            status:400,
+            message:'验证码不正确!'
+        })
+    }else{
+        res.send({
+            status:200,
+            email:email
+        })
+    }
 })
 export default router;

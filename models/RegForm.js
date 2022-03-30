@@ -8,6 +8,8 @@ const RegFormSchema = mongoose.Schema({
     pID:{type:String},
     //主治医生姓名
     pDocName:{type:String},
+    //患者邮箱
+    pEmail:{type:String},
     //主治医生id
     pDocID:{type:Number},
     //科室id
@@ -23,7 +25,8 @@ const RegFormSchema = mongoose.Schema({
     //就诊时间
     treatTime:{type:String},
     //患者手机号
-    pTel:{type:Number}
+    pTel:{type:Number},
+
 });
 
 const RegForm = mongoose.model('regForm', RegFormSchema);

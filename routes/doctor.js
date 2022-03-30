@@ -45,7 +45,7 @@ router.post('/web/api/addDoc', (req, res, next) => {
     }
 })
 router.get('/web/api/getDocByDay', (req, res) => {
-    let s_id = req.query.s_id;
+        let s_id = req.query.s_id;
     let date = req.query.date;
     console.log(date);
     let isVisitDoc = [];
@@ -245,5 +245,34 @@ router.post('/web/api/deleteDoctor', (req, res, next) => {
         })
     }
 
+})
+//修改密码
+router.post('/web/api/changeDocPwd',(req,res,next)=>{
+    let token = req.body.token
+    let oldPwd = req.body.oldPwd;
+    let newPwd = req.body.newPwd;
+    Doctor.findOne({_id:token},(err,result)=>{
+        if (err) return next(Error(err));
+        if (oldPwd===result.dPassword) {
+            Doctor.updateOne({
+                _id: token
+            }, {
+                $set: {
+                    dPassword:newPwd
+                }
+            }, (err) => {
+                if (err) throw err;
+            });
+            res.send({
+                status:200,
+                message:'修改密码成功'
+            })
+        }else{
+            res.send({
+                status:400,
+                message:'请输入正确的旧密码'
+            })
+        }
+    })
 })
 export default router;
