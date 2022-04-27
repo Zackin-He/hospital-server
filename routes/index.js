@@ -380,6 +380,7 @@ let user = {}
 router.post('/web/api/getCode',(req,res,next)=>{
     let email = req.body.email;
     let code = randomCode(6);
+    console.log(code);
     req.session.code = code;
     req.session.email = email;
     // 设置邮件内容

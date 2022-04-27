@@ -1,6 +1,7 @@
 import express from 'express'
 import Doctor from '../models/Doctor';
 import RegForm from '../models/RegForm';
+import Departments from '../models/Departments';
 import db from './../db/db'
 const router = express.Router({});
 router.post('/web/api/addOrder',(req,res,next)=>{
@@ -242,5 +243,60 @@ router.post('/web/api/cancelOrder',(req,res,next)=>{
         status:200,
         message:'取消预约成功'
     })
+})
+router.post('/web/api/getOrdersByDates',async (req,res,next)=>{
+    let dateType = req.body.dateType;
+    let todayTime = new Date(new Date().toLocaleDateString()).getTime();
+    console.log(todayTime);
+    let dayTime = 1000*60*60*24;
+    if (dateType===1) {
+        var data = [];
+        for (let i = 0; i < 7; i++) {
+            let time = todayTime+dayTime*i;
+            let count = await RegForm.find({treatDate:time}).count();
+            console.log(count);
+            data[i] = count
+        }
+    }
+    if (dateType===2) {
+        var data = [];
+        for (let i = 0,j=6; i < 7; i++,j--) {
+            let time = todayTime-dayTime*j;
+            let count = await RegForm.find({treatDate:time}).count();
+            data[i] = count
+        }
+    }
+    res.send({
+        result:data,
+        status:200
+    })
+})
+router.post('/web/api/getOrdersBySpecialty',(req,res,next)=>{
+    let specialtyList = [];
+    let data = [];
+    Departments.find({}, (err, list) => {
+        list.forEach((item)=>{
+            specialtyList = specialtyList.concat(item.specialty)
+        });
+        let k = 0
+        specialtyList.forEach(async (item,index)=>{
+            let value = await RegForm.find({dID:item.specialty_id}).count();
+            k++;
+            if (value>0) {
+                data.push({
+                    value:value,
+                    name:item.specialty_name
+                })
+            }
+            if (k==specialtyList.length) {
+                console.log(data);   
+                res.send({
+                    result:data,
+                    status:200
+                })
+            }
+
+        })
+    });
 })
 export default router;
