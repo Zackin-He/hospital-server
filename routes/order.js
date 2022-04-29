@@ -254,7 +254,6 @@ router.post('/web/api/getOrdersByDates',async (req,res,next)=>{
         for (let i = 0; i < 7; i++) {
             let time = todayTime+dayTime*i;
             let count = await RegForm.find({treatDate:time}).count();
-            console.log(count);
             data[i] = count
         }
     }
@@ -288,8 +287,7 @@ router.post('/web/api/getOrdersBySpecialty',(req,res,next)=>{
                     name:item.specialty_name
                 })
             }
-            if (k==specialtyList.length) {
-                console.log(data);   
+            if (k==specialtyList.length) { 
                 res.send({
                     result:data,
                     status:200
