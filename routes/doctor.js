@@ -1,41 +1,53 @@
 import express from 'express'
 import db from '../db/db';
+import DocImage from '../models/DocImage';
 import Doctor from '../models/Doctor';
 const router = express.Router({});
 //前台接口
 router.post('/web/api/addDoc', (req, res, next) => {
     if (req.session.userID) {
-        const doctor = new Doctor({
-            // 医生姓名
-            dName: req.body.dName,
-            //医生职称
-            docTitle: req.body.docTitle,
-            // 医生编号
-            dID: req.body.dID,
-            //性别
-            dGender: req.body.dGender,
-            //所属科室
-            dDepartment: req.body.dDepartment,
-            //所属科室编号
-            dPmtid: req.body.dPmtid,
-            //电话
-            dTel: req.body.tel,
-            //简介
-            dIntroduction: req.body.introduction,
-            //排班情况
-            dScheduling: [],
-            //密码
-            dPassword: '123456'
-        });
-        doctor.save((err, result) => {
-            if (err) {
-                return next(Error(err))
+        Doctor.find({"dID":req.body.dID},(err,results)=>{
+            if (results.length > 0) {
+                res.send({
+                    status: 400,
+                    message: '该医生id已经存在！'
+                })
+            }else{
+                const doctor = new Doctor({
+                    // 医生姓名
+                    dName: req.body.dName,
+                    //医生职称
+                    docTitle: req.body.docTitle,
+                    // 医生编号
+                    dID: req.body.dID,
+                    //性别
+                    dGender: req.body.dGender,
+                    //所属科室
+                    dDepartment: req.body.dDepartment,
+                    //所属科室编号
+                    dPmtid: req.body.dPmtid,
+                    //电话
+                    dTel: req.body.tel,
+                    //简介
+                    dIntroduction: req.body.introduction,
+                    //排班情况
+                    dScheduling: [],
+                    //密码
+                    dPassword: '123456',
+                    //头像
+                    dImage: req.body.image
+                });
+                doctor.save((err, result) => {
+                    if (err) {
+                        return next(Error(err))
+                    }
+                    res.send({
+                        status: 200,
+                        data: result,
+                        message: '添加医师成功'
+                    })
+                })
             }
-            res.send({
-                status: 200,
-                data: result,
-                message: '添加医师成功'
-            })
         })
     } else {
         res.json({
@@ -179,7 +191,6 @@ router.post('/web/api/getDoctorsByCondition', (req, res, next) => {
 })
 router.post('/web/api/changeDoctor', (req, res, next) => {
     if (req.session.userID) {
-        if (req.session.user_type==='admin') {
             let dID = req.body.dID;
         let name = req.body.dName;
         let gender = req.body.dGender;
@@ -187,6 +198,7 @@ router.post('/web/api/changeDoctor', (req, res, next) => {
         let s_name = req.body.s_name;
         let introduction = req.body.introduction;
         let docTitle = req.body.docTitle;
+        let image = req.body.image;
         db.collection('doctors').updateOne({
             dID: dID
         }, {
@@ -196,7 +208,8 @@ router.post('/web/api/changeDoctor', (req, res, next) => {
                 docTitle: docTitle,
                 dPmtid: s_id,
                 dDepartment: s_name,
-                dIntroduction: introduction
+                dIntroduction: introduction,
+                dImage:image
             }
         }, (err) => {
             if (err) throw err;
@@ -205,12 +218,6 @@ router.post('/web/api/changeDoctor', (req, res, next) => {
             status: 200,
             message: '修改成功'
         })
-        }else{
-            res.send({
-                status:402,
-                message:'你无权限进行此操作！'
-            })
-        }
     } else {
         res.send({
             status: 401,

@@ -97,12 +97,15 @@ router.post('/web/api/addOrder',(req,res,next)=>{
 })
 router.post('/web/api/findOrder',(req,res,next)=>{
     let email = req.body.email;//患者账号
-    RegForm.find({pEmail:email},(err,result)=>{
+    let startTime = req.body.startTime;
+    let endTime = req.body.endTime;
+    console.log(startTime,endTime);
+    RegForm.find({pEmail:email,treatDate:startTime==undefined?{$gte:0}:{$gte:startTime,$lte:endTime}},(err,result)=>{
         if (err) return next(Error(err));
             res.json({
                 status: 200,
                 data: result
-            })
+        })
     })
 })
 router.get('/web/api/getOrders',(req,res,next)=>{

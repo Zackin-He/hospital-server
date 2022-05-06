@@ -22,8 +22,9 @@ const DoctorSchema = mongoose.Schema({
     //简介
     dIntroduction:{type:String},
     //密码
-    dPassword:{type:String}
-
+    dPassword:{type:String},
+    //img
+    dImage:{type:String}
 });
 
 const Doctor = mongoose.model('doctor', DoctorSchema);
